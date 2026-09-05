@@ -1,0 +1,178 @@
+import java.util.*;
+
+public class ExpenseSplitter {
+
+    // ---------- Person class ----------
+    static class Person {
+        String name;
+        double balance; // positive = should receive money, negative = owes money
+
+        Person(String name) {
+            this.name = name;
+            this.balance = 0;
+        }
+    }
+
+    // ---------- Expense class ----------
+    static class Expense {
+        String paidBy;
+        double amount;
+        List<String> splitAmong;
+
+        Expense(String paidBy, double amount, List<String> splitAmong) {
+            this.paidBy = paidBy;
+            this.amount = amount;
+            this.splitAmong = splitAmong;
+        }
+    }
+
+    static Map<String, Person> people = new LinkedHashMap<>();
+    static List<Expense> expenses = new ArrayList<>();
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        System.out.println("=== Expense Splitter ===");
+        System.out.print("Enter number of people in the group: ");
+        int n = Integer.parseInt(sc.nextLine());
+
+        for (int i = 0; i < n; i++) {
+            System.out.print("Enter name of person " + (i + 1) + ": ");
+            String name = sc.nextLine();
+            people.put(name, new Person(name));
+        }
+
+        while (true) {
+            System.out.println("\n1. Add Expense\n2. Show Balances\n3. Settle Debts\n4. Exit");
+            System.out.print("Choose option: ");
+            int choice = Integer.parseInt(sc.nextLine());
+
+            switch (choice) {
+                case 1:
+                    addExpense(sc);
+                    break;
+                case 2:
+                    showBalances();
+                    break;
+                case 3:
+                    settleDebts();
+                    break;
+                case 4:
+                    System.out.println("Exiting. Goodbye!");
+                    sc.close();
+                    return;
+                default:
+                    System.out.println("Invalid option, try again.");
+            }
+        }
+    }
+
+    // ---------- Add an expense and update balances ----------
+    static void addExpense(Scanner sc) {
+        try {
+            System.out.print("Who paid? ");
+            String paidBy = sc.nextLine();
+
+            if (!people.containsKey(paidBy)) {
+                throw new IllegalArgumentException("Person not found in group.");
+            }
+
+            System.out.print("Enter amount paid: ");
+            double amount = Double.parseDouble(sc.nextLine());
+
+            System.out.print("Split among how many people? ");
+            int count = Integer.parseInt(sc.nextLine());
+
+            List<String> splitAmong = new ArrayList<>();
+            for (int i = 0; i < count; i++) {
+                System.out.print("Enter name of person " + (i + 1) + " sharing this expense: ");
+                String name = sc.nextLine();
+                if (!people.containsKey(name)) {
+                    throw new IllegalArgumentException("Person not found: " + name);
+                }
+                splitAmong.add(name);
+            }
+
+            double share = amount / count;
+
+            // Payer gets credited the full amount, then debited their own share
+            people.get(paidBy).balance += amount;
+
+            for (String name : splitAmong) {
+                people.get(name).balance -= share;
+            }
+
+            expenses.add(new Expense(paidBy, amount, splitAmong));
+            System.out.println("Expense added successfully!");
+
+        } catch (NumberFormatException e) {
+            System.out.println("Error: Please enter a valid number.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    // ---------- Display current balances ----------
+    static void showBalances() {
+        System.out.println("\n--- Current Balances ---");
+        for (Person p : people.values()) {
+            if (p.balance > 0.01) {
+                System.out.printf("%s should receive Rs. %.2f%n", p.name, p.balance);
+            } else if (p.balance < -0.01) {
+                System.out.printf("%s owes Rs. %.2f%n", p.name, -p.balance);
+            } else {
+                System.out.println(p.name + " is settled up.");
+            }
+        }
+    }
+
+    // ---------- Settle debts using greedy algorithm ----------
+    static void settleDebts() {
+        // Create copies so we don't disturb original balances
+        List<Person> creditors = new ArrayList<>();
+        List<Person> debtors = new ArrayList<>();
+
+        for (Person p : people.values()) {
+            if (p.balance > 0.01) {
+                Person copy = new Person(p.name);
+                copy.balance = p.balance;
+                creditors.add(copy);
+            } else if (p.balance < -0.01) {
+                Person copy = new Person(p.name);
+                copy.balance = p.balance;
+                debtors.add(copy);
+            }
+        }
+
+        // Sort descending: highest creditor first, most negative debtor first
+        creditors.sort((a, b) -> Double.compare(b.balance, a.balance));
+        debtors.sort((a, b) -> Double.compare(a.balance, b.balance));
+
+        System.out.println("\n--- Settlement Plan (Minimum Transactions) ---");
+
+        int i = 0, j = 0;
+        boolean anyTransaction = false;
+
+        while (i < debtors.size() && j < creditors.size()) {
+            Person debtor = debtors.get(i);
+            Person creditor = creditors.get(j);
+
+            double amount = Math.min(-debtor.balance, creditor.balance);
+
+            if (amount > 0.01) {
+                System.out.printf("%s pays Rs. %.2f to %s%n", debtor.name, amount, creditor.name);
+                anyTransaction = true;
+            }
+
+            debtor.balance += amount;
+            creditor.balance -= amount;
+
+            if (Math.abs(debtor.balance) < 0.01) i++;
+            if (Math.abs(creditor.balance) < 0.01) j++;
+        }
+
+        if (!anyTransaction) {
+            System.out.println("Everyone is already settled up!");
+        }
+    }
+}
