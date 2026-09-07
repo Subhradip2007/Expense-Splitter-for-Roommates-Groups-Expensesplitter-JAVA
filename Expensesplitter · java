@@ -2,7 +2,7 @@ import java.util.*;
 
 public class ExpenseSplitter {
 
-    // ---------- Person class ----------
+    // Person class 
     static class Person {
         String name;
         double balance; // positive = should receive money, negative = owes money
@@ -13,7 +13,7 @@ public class ExpenseSplitter {
         }
     }
 
-    // ---------- Expense class ----------
+    // Expense class 
     static class Expense {
         String paidBy;
         double amount;
@@ -67,7 +67,7 @@ public class ExpenseSplitter {
         }
     }
 
-    // ---------- Add an expense and update balances ----------
+    //  Add an expense and update balances
     static void addExpense(Scanner sc) {
         try {
             System.out.print("Who paid? ");
@@ -112,7 +112,7 @@ public class ExpenseSplitter {
         }
     }
 
-    // ---------- Display current balances ----------
+    //Display current balances
     static void showBalances() {
         System.out.println("\n--- Current Balances ---");
         for (Person p : people.values()) {
@@ -126,7 +126,7 @@ public class ExpenseSplitter {
         }
     }
 
-    // ---------- Settle debts using greedy algorithm ----------
+    //  Settle debts using greedy algorithm
     static void settleDebts() {
         // Create copies so we don't disturb original balances
         List<Person> creditors = new ArrayList<>();
